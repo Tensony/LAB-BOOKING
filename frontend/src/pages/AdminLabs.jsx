@@ -3,11 +3,13 @@ import { FlaskConical, Plus, Trash2, Edit2, X, MapPin, Users, CalendarPlus } fro
 import toast from 'react-hot-toast';
 import api from '../api/client';
 import ConfirmDialog from '../components/ConfirmDialog';
+import usePageTitle from '../hooks/usePageTitle';
 
 const emptyLab = { name: '', location: '', capacity: '', description: '', image_url: '' };
 const emptySlot = { date: '', start_time: '', end_time: '', max_bookings: 1 };
 
 const AdminLabs = () => {
+  usePageTitle('Manage Labs');
   const [labs, setLabs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [labModal, setLabModal] = useState(false);

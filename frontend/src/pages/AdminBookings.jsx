@@ -6,6 +6,10 @@ import StatusBadge from '../components/StatusBadge';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { downloadCsv } from '../utils/exportCsv';
 import { uploadsUrl } from '../utils/uploads';
+import usePageTitle from '../hooks/usePageTitle';
+import Pagination from '../components/Pagination';
+
+const PAGE_SIZE = 10;
 
 const StatCard = ({ icon: Icon, iconClass, label, value, note, color }) => (
   <div className="card rounded-3xl border-surface-200 p-5 shadow-sm">
@@ -23,6 +27,7 @@ const StatCard = ({ icon: Icon, iconClass, label, value, note, color }) => (
 );
 
 const AdminBookings = () => {
+  usePageTitle('All Bookings');
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -30,6 +35,7 @@ const AdminBookings = () => {
   const [sortDirection, setSortDirection] = useState('desc');
   const [error, setError] = useState(null);
   const [statusConfirm, setStatusConfirm] = useState(null);
+  const [page, setPage] = useState(1);
 
   const loadBookings = async () => {
     setLoading(true);
@@ -49,6 +55,10 @@ const AdminBookings = () => {
   useEffect(() => {
     loadBookings();
   }, []);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, statusFilter, sortDirection]);
 
   const handleStatus = async (id, status) => {
     setLoading(true);
@@ -135,6 +145,8 @@ const AdminBookings = () => {
   }, [bookings, search, statusFilter, sortDirection]);
 
   const visibleCount = filteredBookings.length;
+  const totalPages = Math.max(1, Math.ceil(filteredBookings.length / PAGE_SIZE));
+  const paginatedBookings = filteredBookings.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
@@ -298,7 +310,7 @@ const AdminBookings = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-surface-50">
-                {filteredBookings.map((booking) => (
+                {paginatedBookings.map((booking) => (
                   <tr key={booking.id} className="hover:bg-surface-50 transition-colors">
                     <td className="px-5 py-4 text-slate-400 font-mono text-xs">#{booking.id}</td>
                     <td className="px-5 py-4">
@@ -374,6 +386,13 @@ const AdminBookings = () => {
                 ))}
               </tbody>
             </table>
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              totalItems={filteredBookings.length}
+              pageSize={PAGE_SIZE}
+            />
           </div>
         )}
       </div>

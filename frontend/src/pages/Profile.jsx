@@ -3,8 +3,10 @@ import { User, Lock, Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../api/client';
 import useAuthStore from '../store/authStore';
+import usePageTitle from '../hooks/usePageTitle';
 
 const Profile = () => {
+  usePageTitle('Profile');
   const { user, setUser } = useAuthStore();
   const [name, setName] = useState(user?.name || '');
   const [profileLoading, setProfileLoading] = useState(false);

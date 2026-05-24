@@ -32,6 +32,7 @@ function App() {
   return (
     <BrowserRouter>
       <Toaster position="top-right" toastOptions={{
+        className: 'dark:!bg-surface-800 dark:!text-slate-100 dark:!border-surface-700',
         style: { borderRadius: '12px', fontFamily: 'DM Sans, sans-serif', fontSize: '14px' },
         success: { iconTheme: { primary: '#16a34a', secondary: '#fff' } },
       }} />

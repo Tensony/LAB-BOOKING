@@ -14,6 +14,7 @@ import {
 import api from '../api/client';
 import StatusBadge from '../components/StatusBadge';
 import ConfirmDialog from '../components/ConfirmDialog';
+import usePageTitle from '../hooks/usePageTitle';
 
 const StatCard = ({ icon: Icon, label, value, color, sub }) => (
   <div className="card p-5">
@@ -29,6 +30,7 @@ const StatCard = ({ icon: Icon, label, value, color, sub }) => (
 );
 
 const AdminDashboard = () => {
+  usePageTitle('Admin Dashboard');
   const [stats, setStats] = useState(null);
   const [recent, setRecent] = useState([]);
   const [loading, setLoading] = useState(true);

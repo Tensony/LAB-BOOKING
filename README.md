@@ -63,7 +63,9 @@ npm run dev                 # http://localhost:5173
 **Student:** Register, login, browse labs, book slots, view/cancel bookings, upload lab report, profile & password  
 **Admin:** Dashboard stats, manage labs & slots (CRUD), approve/reject bookings, manage users, export CSV, view reports
 
-**Optional:** Email students when bookings are approved/rejected (configure SMTP in `backend/.env`)
+**Optional:** Email notifications (configure SMTP in `backend/.env`) — students on approve/reject; admins on new booking requests
+
+**UI:** Dark mode toggle in the navbar · paginated booking/user lists
 
 ---
 
@@ -94,4 +96,6 @@ NODE_ENV=development
 VITE_API_URL=http://localhost:5000/api
 ```
 
-**Optional SMTP** (see commented vars in `backend/.env.example`) — when set, students receive email on approve/reject.
+**Optional SMTP** (see commented vars in `backend/.env.example`):
+- Students receive email when bookings are approved or rejected
+- Admins receive email when a new booking is submitted (`ADMIN_EMAIL` or all admin accounts)

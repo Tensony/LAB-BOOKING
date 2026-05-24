@@ -3,11 +3,19 @@ import { Users, Trash2, Search, ShieldCheck, GraduationCap } from 'lucide-react'
 import toast from 'react-hot-toast';
 import api from '../api/client';
 import useAuthStore from '../store/authStore';
+import usePageTitle from '../hooks/usePageTitle';
+import ConfirmDialog from '../components/ConfirmDialog';
+import Pagination from '../components/Pagination';
+
+const PAGE_SIZE = 10;
 
 const AdminUsers = () => {
+  usePageTitle('Users');
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [page, setPage] = useState(1);
   const { user: me } = useAuthStore();
 
   const fetchUsers = () => {
@@ -16,14 +24,18 @@ const AdminUsers = () => {
 
   useEffect(() => { fetchUsers(); }, []);
 
-  const deleteUser = async (id) => {
-    if (!confirm('Delete this user and all their bookings?')) return;
+  useEffect(() => { setPage(1); }, [search]);
+
+  const deleteUser = async () => {
+    if (!deleteTarget) return;
     try {
-      await api.delete(`/users/${id}`);
+      await api.delete(`/users/${deleteTarget.id}`);
       toast.success('User deleted');
       fetchUsers();
     } catch {
       toast.error('Failed to delete user');
+    } finally {
+      setDeleteTarget(null);
     }
   };
 
@@ -31,9 +43,21 @@ const AdminUsers = () => {
     u.name.toLowerCase().includes(search.toLowerCase()) ||
     u.email.toLowerCase().includes(search.toLowerCase())
   );
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="Delete user"
+        message={`Delete ${deleteTarget?.name} and all their bookings? This cannot be undone.`}
+        confirmLabel="Delete user"
+        danger
+        onConfirm={deleteUser}
+        onCancel={() => setDeleteTarget(null)}
+      />
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-heading font-bold text-slate-900">Users</h1>
@@ -41,13 +65,17 @@ const AdminUsers = () => {
         </div>
         <div className="relative">
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Search users…" className="input pl-9 w-56" />
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search users…"
+            className="input pl-9 w-full sm:w-56"
+          />
         </div>
       </div>
 
       {loading ? (
-        <div className="space-y-3">{[1,2,3,4].map(i => <div key={i} className="h-16 bg-surface-100 rounded-2xl animate-pulse" />)}</div>
+        <div className="space-y-3">{[1, 2, 3, 4].map(i => <div key={i} className="h-16 bg-surface-100 rounded-2xl animate-pulse" />)}</div>
       ) : filtered.length === 0 ? (
         <div className="card p-12 text-center">
           <Users size={32} className="text-slate-300 mx-auto mb-3" />
@@ -64,7 +92,7 @@ const AdminUsers = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-surface-50">
-              {filtered.map(u => (
+              {paginated.map(u => (
                 <tr key={u.id} className="hover:bg-surface-50 transition-colors">
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-3">
@@ -88,8 +116,10 @@ const AdminUsers = () => {
                   </td>
                   <td className="px-5 py-3.5">
                     {u.id !== me?.id && u.role !== 'admin' && (
-                      <button onClick={() => deleteUser(u.id)}
-                        className="text-slate-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-colors">
+                      <button
+                        onClick={() => setDeleteTarget(u)}
+                        className="text-slate-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-colors"
+                      >
                         <Trash2 size={14} />
                       </button>
                     )}
@@ -98,6 +128,13 @@ const AdminUsers = () => {
               ))}
             </tbody>
           </table>
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            totalItems={filtered.length}
+            pageSize={PAGE_SIZE}
+          />
         </div>
       )}
     </div>

@@ -12,6 +12,7 @@ import {
   UserCircle,
 } from 'lucide-react';
 import useAuthStore from '../store/authStore';
+import ThemeToggle from './ThemeToggle';
 
 const Navbar = () => {
   const { user, logout } = useAuthStore();
@@ -21,7 +22,7 @@ const Navbar = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate('/');
     setMobileOpen(false);
   };
 
@@ -62,13 +63,13 @@ const Navbar = () => {
   );
 
   return (
-    <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur border-b border-surface-200">
+    <nav className="sticky top-0 z-50 bg-white/80 dark:bg-surface-950/80 backdrop-blur border-b border-surface-200 dark:border-surface-800">
       <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
         <Link to={homeTo} className="flex items-center gap-2.5" onClick={() => setMobileOpen(false)}>
           <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center">
             <FlaskConical size={16} className="text-white" />
           </div>
-          <span className="font-heading font-700 text-lg text-slate-900">LabBook</span>
+          <span className="font-heading font-700 text-lg text-slate-900 dark:text-white">LabBook</span>
         </Link>
 
         {user && (
@@ -81,8 +82,9 @@ const Navbar = () => {
 
         {user && (
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             <div className="hidden sm:block text-right">
-              <p className="text-sm font-medium text-slate-900 leading-none">{user.name}</p>
+              <p className="text-sm font-medium text-slate-900 dark:text-slate-100 leading-none">{user.name}</p>
               <p className="text-xs text-slate-400 capitalize mt-0.5">{user.role}</p>
             </div>
             <button
@@ -105,7 +107,7 @@ const Navbar = () => {
       </div>
 
       {user && mobileOpen && (
-        <div className="md:hidden border-t border-surface-200 bg-white px-4 py-4 space-y-1">
+        <div className="md:hidden border-t border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-950 px-4 py-4 space-y-1">
           {links.map((link) => (
             <NavLink key={link.to} {...link} mobile />
           ))}

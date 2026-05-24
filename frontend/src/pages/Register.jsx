@@ -4,8 +4,10 @@ import { FlaskConical, ChevronLeft } from 'lucide-react';
 import PublicHeader from '../components/PublicHeader';
 import toast from 'react-hot-toast';
 import useAuthStore from '../store/authStore';
+import usePageTitle from '../hooks/usePageTitle';
 
 const Register = () => {
+  usePageTitle('Register');
   const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '' });
   const [loading, setLoading] = useState(false);
   const { register } = useAuthStore();
@@ -13,6 +15,8 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!form.email.toLowerCase().endsWith('@zut.ac.zm'))
+      return toast.error('Please use your ZUT email (@zut.ac.zm)');
     if (form.password !== form.confirm) return toast.error('Passwords do not match');
     if (form.password.length < 6) return toast.error('Password must be at least 6 characters');
     setLoading(true);
