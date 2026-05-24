@@ -39,4 +39,37 @@ const sendBookingStatusEmail = async ({ to, studentName, labName, date, startTim
   });
 };
 
-module.exports = { sendBookingStatusEmail };
+const sendNewBookingAdminEmail = async ({ adminEmails, studentName, studentEmail, labName, date, startTime, endTime, purpose }) => {
+  if (!transporter || !adminEmails?.length) return;
+
+  const recipients = adminEmails.join(', ');
+  const subject = `New lab booking request — ${labName}`;
+  const body = `A new booking requires your review.
+
+Student: ${studentName} (${studentEmail})
+Lab: ${labName}
+Date: ${date}
+Time: ${startTime} – ${endTime}
+Purpose: ${purpose || 'Not specified'}
+
+Log in to LabBook to approve or reject this request.
+
+— LabBook`;
+
+  await transporter.sendMail({
+    from: process.env.SMTP_FROM || 'LabBook <noreply@zut.ac.zm>',
+    to: recipients,
+    subject,
+    text: body,
+  });
+};
+
+const getAdminEmails = async (pool) => {
+  if (process.env.ADMIN_EMAIL) {
+    return [process.env.ADMIN_EMAIL];
+  }
+  const result = await pool.query("SELECT email FROM users WHERE role = 'admin'");
+  return result.rows.map((r) => r.email);
+};
+
+module.exports = { sendBookingStatusEmail, sendNewBookingAdminEmail, getAdminEmails };

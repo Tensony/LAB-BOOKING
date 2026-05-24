@@ -4,6 +4,7 @@ import { CalendarDays, FlaskConical, CheckCircle, Clock, XCircle, ArrowRight, Sp
 import api from '../api/client';
 import useAuthStore from '../store/authStore';
 import StatusBadge from '../components/StatusBadge';
+import usePageTitle from '../hooks/usePageTitle';
 
 const StatCard = ({ icon: Icon, label, value, color }) => (
   <div className="card p-5 transition-transform duration-300 ease-out hover:-translate-y-1 hover:shadow-lg animate-slide-up">
@@ -18,6 +19,7 @@ const StatCard = ({ icon: Icon, label, value, color }) => (
 );
 
 const Dashboard = () => {
+  usePageTitle('Dashboard');
   const { user } = useAuthStore();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);

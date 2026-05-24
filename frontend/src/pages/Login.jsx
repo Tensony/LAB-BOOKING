@@ -4,8 +4,10 @@ import { FlaskConical, Eye, EyeOff, ChevronLeft } from 'lucide-react';
 import PublicHeader from '../components/PublicHeader';
 import toast from 'react-hot-toast';
 import useAuthStore from '../store/authStore';
+import usePageTitle from '../hooks/usePageTitle';
 
 const Login = () => {
+  usePageTitle('Sign in');
   const [form, setForm] = useState({ email: '', password: '' });
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);

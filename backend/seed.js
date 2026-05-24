@@ -22,16 +22,16 @@ const seed = async () => {
 
   // Sample labs
   const labs = [
-    { name: 'Computer Lab A', location: 'Block C, Room 101', capacity: 30, description: 'General purpose computer lab with 30 workstations, each running Windows 11 and Ubuntu dual-boot.' },
-    { name: 'Computer Lab B', location: 'Block C, Room 102', capacity: 25, description: 'Networking lab equipped with Cisco routers, switches, and patch panels for practical networking sessions.' },
-    { name: 'Software Engineering Lab', location: 'Block D, Room 204', capacity: 20, description: 'Dedicated lab for software development projects with high-performance machines and collaborative whiteboards.' },
-    { name: 'Data Science Lab', location: 'Block D, Room 205', capacity: 15, description: 'Equipped with GPU workstations for machine learning, data analysis, and AI model training.' },
+    { name: 'Computer Lab A', location: 'Block C, Room 101', capacity: 30, description: 'General purpose computer lab with 30 workstations, each running Windows 11 and Ubuntu dual-boot.', image_url: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&q=80' },
+    { name: 'Computer Lab B', location: 'Block C, Room 102', capacity: 25, description: 'Networking lab equipped with Cisco routers, switches, and patch panels for practical networking sessions.', image_url: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&q=80' },
+    { name: 'Software Engineering Lab', location: 'Block D, Room 204', capacity: 20, description: 'Dedicated lab for software development projects with high-performance machines and collaborative whiteboards.', image_url: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&q=80' },
+    { name: 'Data Science Lab', location: 'Block D, Room 205', capacity: 15, description: 'Equipped with GPU workstations for machine learning, data analysis, and AI model training.', image_url: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&q=80' },
   ];
 
   for (const lab of labs) {
     const res = await pool.query(
-      `INSERT INTO labs (name, location, capacity, description) VALUES ($1,$2,$3,$4) RETURNING id`,
-      [lab.name, lab.location, lab.capacity, lab.description]
+      `INSERT INTO labs (name, location, capacity, description, image_url) VALUES ($1,$2,$3,$4,$5) RETURNING id`,
+      [lab.name, lab.location, lab.capacity, lab.description, lab.image_url]
     );
     const labId = res.rows[0].id;
 

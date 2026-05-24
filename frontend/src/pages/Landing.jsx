@@ -1,4 +1,6 @@
-import { Link } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import usePageTitle from '../hooks/usePageTitle';
 import {
   FlaskConical,
   CalendarDays,
@@ -45,8 +47,18 @@ const steps = [
   { step: '03', title: 'Get approved & go', text: 'Once approved, show up for your session and upload your work.' },
 ];
 
-const Landing = () => (
-  <div className="min-h-screen bg-surface-50 text-slate-800">
+const Landing = () => {
+  const { hash } = useLocation();
+  usePageTitle(null);
+
+  useEffect(() => {
+    if (!hash) return;
+    const el = document.querySelector(hash);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [hash]);
+
+  return (
+  <div className="min-h-screen bg-surface-50 dark:bg-surface-950 text-slate-800 dark:text-slate-200">
     <PublicHeader />
 
     {/* Hero */}
@@ -63,7 +75,7 @@ const Landing = () => (
               <Sparkles size={14} />
               ZUT Lab Booking System
             </div>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-heading font-bold text-slate-900 leading-[1.1] tracking-tight">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-heading font-bold text-slate-900 dark:text-white leading-[1.1] tracking-tight">
               Book lab time.
               <span className="block text-brand-600 mt-1">Without the hassle.</span>
             </h1>
@@ -137,7 +149,7 @@ const Landing = () => (
     </section>
 
     {/* Features */}
-    <section id="features" className="py-20 md:py-28 bg-white border-y border-surface-200">
+    <section id="features" className="py-20 md:py-28 bg-white dark:bg-surface-900 border-y border-surface-200 dark:border-surface-800 scroll-mt-20">
       <div className="max-w-6xl mx-auto px-4">
         <div className="text-center max-w-2xl mx-auto mb-14">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-brand-600 mb-3">Features</p>
@@ -166,7 +178,7 @@ const Landing = () => (
     </section>
 
     {/* How it works */}
-    <section id="how-it-works" className="py-20 md:py-28">
+    <section id="how-it-works" className="py-20 md:py-28 scroll-mt-20">
       <div className="max-w-6xl mx-auto px-4">
         <div className="text-center max-w-2xl mx-auto mb-14">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-brand-600 mb-3">How it works</p>
@@ -221,7 +233,7 @@ const Landing = () => (
     </section>
 
     {/* Footer */}
-    <footer className="border-t border-surface-200 bg-white py-10">
+    <footer className="border-t border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 py-10">
       <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center">
@@ -239,6 +251,7 @@ const Landing = () => (
       </div>
     </footer>
   </div>
-);
+  );
+};
 
 export default Landing;

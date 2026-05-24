@@ -1,23 +1,35 @@
 import { useEffect, useState, useRef } from 'react';
-import { CalendarDays, Clock, MapPin, Trash2, Upload, FileText, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { CalendarDays, Clock, MapPin, Trash2, Upload, FileText, ExternalLink, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../api/client';
 import StatusBadge from '../components/StatusBadge';
 import ConfirmDialog from '../components/ConfirmDialog';
+import usePageTitle from '../hooks/usePageTitle';
 import { uploadsUrl } from '../utils/uploads';
+import { downloadCsv } from '../utils/exportCsv';
+import { canCancelBooking } from '../utils/booking';
+import Pagination from '../components/Pagination';
+
+const PAGE_SIZE = 8;
 
 const MyBookings = () => {
+  usePageTitle('My Bookings');
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [cancelTarget, setCancelTarget] = useState(null);
+  const [page, setPage] = useState(1);
   const fileInputs = useRef({});
 
   const fetchBookings = () => {
+    setLoading(true);
     api.get('/bookings/my').then(r => setBookings(r.data)).finally(() => setLoading(false));
   };
 
   useEffect(() => { fetchBookings(); }, []);
+
+  useEffect(() => { setPage(1); }, [filter]);
 
   const handleCancel = async () => {
     if (!cancelTarget) return;
@@ -44,47 +56,87 @@ const MyBookings = () => {
     }
   };
 
+  const exportBookings = () => {
+    const rows = [
+      ['Lab', 'Date', 'Start', 'End', 'Status', 'Location', 'Purpose'],
+      ...filtered.map((b) => [
+        b.lab_name,
+        new Date(b.date).toISOString().split('T')[0],
+        b.start_time?.slice(0, 5),
+        b.end_time?.slice(0, 5),
+        b.status,
+        b.location || '',
+        b.purpose || '',
+      ]),
+    ];
+    downloadCsv(`my-bookings-${new Date().toISOString().split('T')[0]}.csv`, rows);
+    toast.success('Export downloaded');
+  };
+
   const filters = ['all', 'pending', 'approved', 'rejected'];
   const filtered = filter === 'all' ? bookings : bookings.filter(b => b.status === filter);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  const cancelMessage = cancelTarget?.status === 'approved'
+    ? 'Cancel this approved session? The slot will be freed for other students.'
+    : 'Are you sure you want to cancel this booking? This cannot be undone.';
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <ConfirmDialog
         open={!!cancelTarget}
         title="Cancel booking"
-        message="Are you sure you want to cancel this booking? This cannot be undone."
+        message={cancelMessage}
         confirmLabel="Cancel booking"
         danger
         onConfirm={handleCancel}
         onCancel={() => setCancelTarget(null)}
       />
 
-      <div className="mb-6">
-        <h1 className="text-2xl font-heading font-bold text-slate-900">My Bookings</h1>
-        <p className="text-slate-500 mt-1">Track and manage your lab sessions</p>
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-heading font-bold text-slate-900">My Bookings</h1>
+          <p className="text-slate-500 mt-1">Track and manage your lab sessions</p>
+        </div>
+        {bookings.length > 0 && (
+          <button
+            type="button"
+            onClick={exportBookings}
+            className="inline-flex items-center gap-2 btn-secondary text-sm py-2"
+          >
+            <Download size={15} /> Export CSV
+          </button>
+        )}
       </div>
 
       <div className="flex gap-2 mb-6 flex-wrap">
         {filters.map(f => (
-          <button key={f} onClick={() => setFilter(f)}
+          <button
+            key={f}
+            onClick={() => setFilter(f)}
             className={`px-3.5 py-1.5 rounded-xl text-sm font-medium capitalize transition-all ${
               filter === f ? 'bg-brand-600 text-white' : 'bg-surface-100 text-slate-600 hover:bg-surface-200'
-            }`}>
+            }`}
+          >
             {f}
           </button>
         ))}
       </div>
 
       {loading ? (
-        <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="h-24 bg-surface-100 rounded-2xl animate-pulse" />)}</div>
+        <div className="space-y-3">{[1, 2, 3].map(i => <div key={i} className="h-24 bg-surface-100 rounded-2xl animate-pulse" />)}</div>
       ) : filtered.length === 0 ? (
         <div className="card p-12 text-center">
           <CalendarDays size={36} className="text-slate-300 mx-auto mb-3" />
-          <p className="text-slate-500">No {filter !== 'all' ? filter : ''} bookings found</p>
+          <p className="text-slate-500 font-medium">No {filter !== 'all' ? filter : ''} bookings found</p>
+          {filter === 'all' && (
+            <Link to="/labs" className="btn-primary text-sm inline-block mt-4">Browse labs</Link>
+          )}
         </div>
       ) : (
         <div className="space-y-3">
-          {filtered.map(b => (
+          {paginated.map(b => (
             <div key={b.id} className="card p-5">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
@@ -95,10 +147,15 @@ const MyBookings = () => {
                   <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
                     <span className="flex items-center gap-1">
                       <CalendarDays size={11} />
-                      {new Date(b.date).toLocaleDateString('en-ZM', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
+                      {new Date(b.date).toLocaleDateString('en-ZM', {
+                        weekday: 'short',
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric',
+                      })}
                     </span>
                     <span className="flex items-center gap-1">
-                      <Clock size={11} /> {b.start_time.slice(0,5)} – {b.end_time.slice(0,5)}
+                      <Clock size={11} /> {b.start_time.slice(0, 5)} – {b.end_time.slice(0, 5)}
                     </span>
                     {b.location && (
                       <span className="flex items-center gap-1">
@@ -121,21 +178,29 @@ const MyBookings = () => {
                   )}
                 </div>
 
-                <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 flex-shrink-0">
                   {b.status === 'approved' && !b.file_path && (
                     <>
-                      <input type="file" ref={el => fileInputs.current[b.id] = el} className="hidden"
+                      <input
+                        type="file"
+                        ref={el => { fileInputs.current[b.id] = el; }}
+                        className="hidden"
                         accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
-                        onChange={e => e.target.files[0] && handleUpload(b.id, e.target.files[0])} />
-                      <button onClick={() => fileInputs.current[b.id]?.click()}
-                        className="btn-secondary text-xs flex items-center gap-1.5 py-1.5 px-3">
+                        onChange={e => e.target.files[0] && handleUpload(b.id, e.target.files[0])}
+                      />
+                      <button
+                        onClick={() => fileInputs.current[b.id]?.click()}
+                        className="btn-secondary text-xs flex items-center gap-1.5 py-1.5 px-3"
+                      >
                         <Upload size={12} /> Upload Report
                       </button>
                     </>
                   )}
-                  {b.status === 'pending' && (
-                    <button onClick={() => setCancelTarget(b)}
-                      className="btn-danger text-xs flex items-center gap-1.5 py-1.5 px-3">
+                  {canCancelBooking(b) && (
+                    <button
+                      onClick={() => setCancelTarget(b)}
+                      className="btn-danger text-xs flex items-center gap-1.5 py-1.5 px-3"
+                    >
                       <Trash2 size={12} /> Cancel
                     </button>
                   )}
@@ -143,6 +208,13 @@ const MyBookings = () => {
               </div>
             </div>
           ))}
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            totalItems={filtered.length}
+            pageSize={PAGE_SIZE}
+          />
         </div>
       )}
     </div>

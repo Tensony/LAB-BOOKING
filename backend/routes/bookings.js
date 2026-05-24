@@ -3,7 +3,7 @@ const multer = require('multer');
 const path = require('path');
 const { pool } = require('../db');
 const { authenticate, adminOnly } = require('../middleware/auth');
-const { sendBookingStatusEmail } = require('../services/email');
+const { sendBookingStatusEmail, sendNewBookingAdminEmail, getAdminEmails } = require('../services/email');
 
 const storage = multer.diskStorage({
   destination: 'uploads/',
@@ -18,36 +18,83 @@ const upload = multer({
   },
 });
 
-// Student: create booking
+// Student: create booking (transaction + row lock prevents double-booking)
 router.post('/', authenticate, async (req, res) => {
   const { slot_id, purpose } = req.body;
-  try {
-    // Check slot exists
-    const slot = await pool.query('SELECT * FROM slots WHERE id=$1', [slot_id]);
-    if (!slot.rows.length) return res.status(404).json({ error: 'Slot not found' });
+  if (!slot_id) return res.status(400).json({ error: 'Slot is required' });
 
-    // Check for duplicate booking by same user
-    const duplicate = await pool.query(
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    const slot = await client.query('SELECT * FROM slots WHERE id=$1 FOR UPDATE', [slot_id]);
+    if (!slot.rows.length) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Slot not found' });
+    }
+
+    const duplicate = await client.query(
       "SELECT id FROM bookings WHERE user_id=$1 AND slot_id=$2 AND status != 'rejected'",
       [req.user.id, slot_id]
     );
-    if (duplicate.rows.length) return res.status(409).json({ error: 'You already booked this slot' });
+    if (duplicate.rows.length) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ error: 'You already booked this slot' });
+    }
 
-    // Check capacity
-    const booked = await pool.query(
+    const booked = await client.query(
       "SELECT COUNT(*) FROM bookings WHERE slot_id=$1 AND status != 'rejected'",
       [slot_id]
     );
-    if (parseInt(booked.rows[0].count) >= slot.rows[0].max_bookings)
+    if (parseInt(booked.rows[0].count, 10) >= slot.rows[0].max_bookings) {
+      await client.query('ROLLBACK');
       return res.status(409).json({ error: 'Slot is fully booked' });
+    }
 
-    const result = await pool.query(
+    const result = await client.query(
       'INSERT INTO bookings (user_id, slot_id, purpose) VALUES ($1,$2,$3) RETURNING *',
       [req.user.id, slot_id, purpose]
     );
-    res.status(201).json(result.rows[0]);
+
+    await client.query('COMMIT');
+
+    const booking = result.rows[0];
+
+    const details = await pool.query(`
+      SELECT u.name as student_name, u.email as student_email,
+             l.name as lab_name, s.date, s.start_time, s.end_time
+      FROM bookings b
+      JOIN users u ON b.user_id = u.id
+      JOIN slots s ON b.slot_id = s.id
+      JOIN labs l ON s.lab_id = l.id
+      WHERE b.id = $1
+    `, [booking.id]);
+
+    const row = details.rows[0];
+    if (row) {
+      const dateStr = new Date(row.date).toISOString().split('T')[0];
+      getAdminEmails(pool)
+        .then((emails) =>
+          sendNewBookingAdminEmail({
+            adminEmails: emails,
+            studentName: row.student_name,
+            studentEmail: row.student_email,
+            labName: row.lab_name,
+            date: dateStr,
+            startTime: String(row.start_time).slice(0, 5),
+            endTime: String(row.end_time).slice(0, 5),
+            purpose,
+          })
+        )
+        .catch((err) => console.error('Admin notification failed:', err.message));
+    }
+
+    res.status(201).json(booking);
   } catch (err) {
+    await client.query('ROLLBACK');
     res.status(500).json({ error: err.message });
+  } finally {
+    client.release();
   }
 });
 
