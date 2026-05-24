@@ -3,6 +3,7 @@ const multer = require('multer');
 const path = require('path');
 const { pool } = require('../db');
 const { authenticate, adminOnly } = require('../middleware/auth');
+const { sendBookingStatusEmail } = require('../services/email');
 
 const storage = multer.diskStorage({
   destination: 'uploads/',
@@ -109,6 +110,32 @@ router.put('/:id/status', authenticate, adminOnly, async (req, res) => {
     [status, req.params.id]
   );
   if (!result.rows.length) return res.status(404).json({ error: 'Booking not found' });
+
+  if (status === 'approved' || status === 'rejected') {
+    const details = await pool.query(`
+      SELECT u.email, u.name as student_name, l.name as lab_name, s.date, s.start_time, s.end_time
+      FROM bookings b
+      JOIN users u ON b.user_id = u.id
+      JOIN slots s ON b.slot_id = s.id
+      JOIN labs l ON s.lab_id = l.id
+      WHERE b.id = $1
+    `, [req.params.id]);
+
+    const row = details.rows[0];
+    if (row) {
+      const dateStr = new Date(row.date).toISOString().split('T')[0];
+      sendBookingStatusEmail({
+        to: row.email,
+        studentName: row.student_name,
+        labName: row.lab_name,
+        date: dateStr,
+        startTime: String(row.start_time).slice(0, 5),
+        endTime: String(row.end_time).slice(0, 5),
+        status,
+      }).catch((err) => console.error('Email notification failed:', err.message));
+    }
+  }
+
   res.json(result.rows[0]);
 });
 

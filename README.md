@@ -60,8 +60,10 @@ npm run dev                 # http://localhost:5173
 
 ## Features
 
-**Student:** Register, login, browse labs, book slots, view/cancel bookings, upload lab report  
-**Admin:** Dashboard stats, manage labs & slots (CRUD), approve/reject bookings, manage users
+**Student:** Register, login, browse labs, book slots, view/cancel bookings, upload lab report, profile & password  
+**Admin:** Dashboard stats, manage labs & slots (CRUD), approve/reject bookings, manage users, export CSV, view reports
+
+**Optional:** Email students when bookings are approved/rejected (configure SMTP in `backend/.env`)
 
 ---
 
@@ -91,3 +93,5 @@ NODE_ENV=development
 ```
 VITE_API_URL=http://localhost:5000/api
 ```
+
+**Optional SMTP** (see commented vars in `backend/.env.example`) — when set, students receive email on approve/reject.

@@ -13,6 +13,13 @@ const seed = async () => {
     ON CONFLICT (email) DO NOTHING
   `, [adminHash]);
 
+  const studentHash = await bcrypt.hash('student123', 10);
+  await pool.query(`
+    INSERT INTO users (name, email, password_hash, role)
+    VALUES ('Tenson Mulenga', 'tenson@zut.ac.zm', $1, 'student')
+    ON CONFLICT (email) DO NOTHING
+  `, [studentHash]);
+
   // Sample labs
   const labs = [
     { name: 'Computer Lab A', location: 'Block C, Room 101', capacity: 30, description: 'General purpose computer lab with 30 workstations, each running Windows 11 and Ubuntu dual-boot.' },
@@ -51,8 +58,8 @@ const seed = async () => {
   }
 
   console.log('✅ Seed complete!');
-  console.log('📧 Admin: admin@zut.ac.zm');
-  console.log('🔑 Password: admin123');
+  console.log('📧 Admin:   admin@zut.ac.zm / admin123');
+  console.log('📧 Student: tenson@zut.ac.zm / student123');
   process.exit(0);
 };
 

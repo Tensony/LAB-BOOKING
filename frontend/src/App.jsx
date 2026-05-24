@@ -15,6 +15,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import AdminBookings from './pages/AdminBookings';
 import AdminLabs from './pages/AdminLabs';
 import AdminUsers from './pages/AdminUsers';
+import Profile from './pages/Profile';
 
 const Layout = ({ children }) => (
   <>
@@ -40,6 +41,7 @@ function App() {
         <Route path="/labs" element={<ProtectedRoute><Layout><Labs /></Layout></ProtectedRoute>} />
         <Route path="/labs/:id" element={<ProtectedRoute><Layout><LabDetail /></Layout></ProtectedRoute>} />
         <Route path="/my-bookings" element={<ProtectedRoute><Layout><MyBookings /></Layout></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><Layout><Profile /></Layout></ProtectedRoute>} />
         <Route path="/admin/dashboard" element={<ProtectedRoute adminOnly><Layout><AdminDashboard /></Layout></ProtectedRoute>} />
         <Route path="/admin/bookings" element={<ProtectedRoute adminOnly><Layout><AdminBookings /></Layout></ProtectedRoute>} />
         <Route path="/admin/labs" element={<ProtectedRoute adminOnly><Layout><AdminLabs /></Layout></ProtectedRoute>} />

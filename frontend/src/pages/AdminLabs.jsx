@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { FlaskConical, Plus, Trash2, Edit2, X, MapPin, Users, CalendarPlus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../api/client';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 const emptyLab = { name: '', location: '', capacity: '', description: '', image_url: '' };
 const emptySlot = { date: '', start_time: '', end_time: '', max_bookings: 1 };
@@ -15,6 +16,7 @@ const AdminLabs = () => {
   const [labForm, setLabForm] = useState(emptyLab);
   const [slotForm, setSlotForm] = useState(emptySlot);
   const [saving, setSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   const fetchLabs = () => {
     api.get('/labs').then(r => setLabs(r.data)).finally(() => setLoading(false));
@@ -45,11 +47,17 @@ const AdminLabs = () => {
     }
   };
 
-  const deleteLab = async (id) => {
-    if (!confirm('Delete this lab and all its slots?')) return;
-    await api.delete(`/labs/${id}`);
-    toast.success('Lab deleted');
-    fetchLabs();
+  const deleteLab = async () => {
+    if (!deleteTarget) return;
+    try {
+      await api.delete(`/labs/${deleteTarget.id}`);
+      toast.success('Lab deleted');
+      fetchLabs();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to delete lab');
+    } finally {
+      setDeleteTarget(null);
+    }
   };
 
   const addSlot = async () => {
@@ -88,6 +96,15 @@ const AdminLabs = () => {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="Delete lab"
+        message={`Delete "${deleteTarget?.name}" and all its slots? This cannot be undone.`}
+        confirmLabel="Delete"
+        danger
+        onConfirm={deleteLab}
+        onCancel={() => setDeleteTarget(null)}
+      />
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-heading font-bold text-slate-900">Labs Management</h1>
@@ -128,7 +145,7 @@ const AdminLabs = () => {
                   <button onClick={() => openEdit(lab)} className="p-2 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors">
                     <Edit2 size={14} />
                   </button>
-                  <button onClick={() => deleteLab(lab.id)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                  <button onClick={() => setDeleteTarget(lab)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
                     <Trash2 size={14} />
                   </button>
                 </div>

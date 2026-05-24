@@ -1,18 +1,16 @@
 import { useEffect, useState, useRef } from 'react';
-import { CalendarDays, Clock, MapPin, CheckCircle, XCircle, Trash2, Upload, FileText } from 'lucide-react';
+import { CalendarDays, Clock, MapPin, Trash2, Upload, FileText, ExternalLink } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../api/client';
-
-const StatusBadge = ({ status }) => ({
-  approved: <span className="badge-approved"><CheckCircle size={11} className="mr-1" />Approved</span>,
-  pending: <span className="badge-pending"><Clock size={11} className="mr-1" />Pending</span>,
-  rejected: <span className="badge-rejected"><XCircle size={11} className="mr-1" />Rejected</span>,
-}[status]);
+import StatusBadge from '../components/StatusBadge';
+import ConfirmDialog from '../components/ConfirmDialog';
+import { uploadsUrl } from '../utils/uploads';
 
 const MyBookings = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  const [cancelTarget, setCancelTarget] = useState(null);
   const fileInputs = useRef({});
 
   const fetchBookings = () => {
@@ -21,14 +19,16 @@ const MyBookings = () => {
 
   useEffect(() => { fetchBookings(); }, []);
 
-  const handleCancel = async (id) => {
-    if (!confirm('Cancel this booking?')) return;
+  const handleCancel = async () => {
+    if (!cancelTarget) return;
     try {
-      await api.delete(`/bookings/${id}`);
+      await api.delete(`/bookings/${cancelTarget.id}`);
       toast.success('Booking cancelled');
       fetchBookings();
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to cancel');
+    } finally {
+      setCancelTarget(null);
     }
   };
 
@@ -49,6 +49,16 @@ const MyBookings = () => {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
+      <ConfirmDialog
+        open={!!cancelTarget}
+        title="Cancel booking"
+        message="Are you sure you want to cancel this booking? This cannot be undone."
+        confirmLabel="Cancel booking"
+        danger
+        onConfirm={handleCancel}
+        onCancel={() => setCancelTarget(null)}
+      />
+
       <div className="mb-6">
         <h1 className="text-2xl font-heading font-bold text-slate-900">My Bookings</h1>
         <p className="text-slate-500 mt-1">Track and manage your lab sessions</p>
@@ -78,7 +88,7 @@ const MyBookings = () => {
             <div key={b.id} className="card p-5">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1.5">
+                  <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                     <h3 className="font-heading font-semibold text-slate-900 truncate">{b.lab_name}</h3>
                     <StatusBadge status={b.status} />
                   </div>
@@ -98,9 +108,16 @@ const MyBookings = () => {
                   </div>
                   {b.purpose && <p className="text-xs text-slate-400 mt-2 italic">"{b.purpose}"</p>}
                   {b.file_path && (
-                    <div className="flex items-center gap-1.5 mt-2 text-xs text-brand-600">
-                      <FileText size={11} /> {b.file_path}
-                    </div>
+                    <a
+                      href={uploadsUrl(b.file_path)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 mt-2 text-xs text-brand-600 hover:underline"
+                    >
+                      <FileText size={11} />
+                      View uploaded report
+                      <ExternalLink size={10} />
+                    </a>
                   )}
                 </div>
 
@@ -117,7 +134,7 @@ const MyBookings = () => {
                     </>
                   )}
                   {b.status === 'pending' && (
-                    <button onClick={() => handleCancel(b.id)}
+                    <button onClick={() => setCancelTarget(b)}
                       className="btn-danger text-xs flex items-center gap-1.5 py-1.5 px-3">
                       <Trash2 size={12} /> Cancel
                     </button>
