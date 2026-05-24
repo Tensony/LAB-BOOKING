@@ -2,9 +2,10 @@ import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import useAuthStore from './store/authStore';
-import { ProtectedRoute, PublicRoute } from './components/ProtectedRoute';
+import { ProtectedRoute, PublicRoute, LandingRoute } from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
 
+import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
@@ -35,6 +36,7 @@ function App() {
         success: { iconTheme: { primary: '#16a34a', secondary: '#fff' } },
       }} />
       <Routes>
+        <Route path="/" element={<LandingRoute><Landing /></LandingRoute>} />
         <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
         <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
         <Route path="/dashboard" element={<ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>} />
@@ -46,8 +48,7 @@ function App() {
         <Route path="/admin/bookings" element={<ProtectedRoute adminOnly><Layout><AdminBookings /></Layout></ProtectedRoute>} />
         <Route path="/admin/labs" element={<ProtectedRoute adminOnly><Layout><AdminLabs /></Layout></ProtectedRoute>} />
         <Route path="/admin/users" element={<ProtectedRoute adminOnly><Layout><AdminUsers /></Layout></ProtectedRoute>} />
-        <Route path="/" element={<Navigate to="/login" replace />} />
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );
